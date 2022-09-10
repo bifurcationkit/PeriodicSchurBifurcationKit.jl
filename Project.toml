@@ -3,7 +3,15 @@ uuid = "ad85b448-1de9-47eb-8fec-b2cbd0aa7387"
 authors = ["Romain Veltz <romain.veltz@inria.fr> and contributors"]
 version = "0.1.0"
 
+[deps]
+BifurcationKit = "0f109fa4-8a5d-4b75-95aa-f515264e7665"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+PeriodicSchurDecompositions = "e5aedecb-f6c0-4c91-b6ff-fbae4296f459"
+
 [compat]
+PeriodicSchurDecompositions = "0.1.1"
 julia = "1"
 
 [extras]
