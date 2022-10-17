@@ -11,6 +11,7 @@ Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PeriodicSchurDecompositions = "e5aedecb-f6c0-4c91-b6ff-fbae4296f459"
 
 [compat]
+LinearMaps = "3"
 PeriodicSchurDecompositions = "0.1.1"
 julia = "1"
 
