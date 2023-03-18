@@ -81,7 +81,7 @@ opts_br_eq = ContinuationPar(dsmin = 0.001, dsmax = 0.02, ds = 0.005, pMax = 1.7
 br = @time continuation(
 	probBif, PALC(),
 	opts_br_eq,
-	recordFromSolution = (x, p) -> x[n÷2], normC = norminf)
+	normC = norminf)
 
 #################################################################################################### Continuation of Periodic Orbit
 # Standard Shooting
@@ -131,10 +131,6 @@ br_po0 = continuation(
 	ampfactor = 1., δp = 0.0075,
 	linearAlgo = MatrixFreeBLS(@set ls.N = 2+2n*Mt),
 	# eigsolver = EigKrylovKit(tol= 1e-12, x₀ = rand(2n), verbose = 0, dim = 40),
-	finaliseSolution = (z, tau, step, contResult; k...) -> begin
-		# BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
-		return true
-	end,
 	# verbosity = 3, plot = true,
 	normC = norminf)
 
@@ -146,12 +142,11 @@ br_po1 = continuation(
 	ampfactor = 1., δp = 0.0075,
 	linearAlgo = MatrixFreeBLS(@set ls.N = 2+2n*Mt),
 	eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true)),
-	finaliseSolution = (z, tau, step, contResult; k...) -> begin
-		# BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
-		return true
-	end,
 	# verbosity = 3, plot = true,
 	normC = norminf)
+
+display(br_po0.eig[end].eigenvals[1:5])
+display(br_po1.eig[end].eigenvals[1:5])
 
 @test norm(br_po0.eig[end].eigenvals[1:5] - br_po1.eig[end].eigenvals[1:5], Inf) < 1e-2
 
