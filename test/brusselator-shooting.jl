@@ -120,7 +120,8 @@ probsh = ShootingProblem(Mt, probode,
 		QNDF();
 		abstol = 1e-10, reltol = 1e-8, parallel = false,
 		jacobian = :FiniteDifferences,
-		updateSectionEveryStep = 1)
+		# jacobian = :autodiffMF,
+		)
 
 br_po0 = continuation(
 	br, 1,
@@ -131,7 +132,7 @@ br_po0 = continuation(
 	linearAlgo = MatrixFreeBLS(@set ls.N = 2+2n*Mt),
 	# eigsolver = EigKrylovKit(tol= 1e-12, x₀ = rand(2n), verbose = 0, dim = 40),
 	finaliseSolution = (z, tau, step, contResult; k...) -> begin
-		BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
+		# BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
 		return true
 	end,
 	# verbosity = 3, plot = true,
@@ -146,7 +147,7 @@ br_po1 = continuation(
 	linearAlgo = MatrixFreeBLS(@set ls.N = 2+2n*Mt),
 	eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true)),
 	finaliseSolution = (z, tau, step, contResult; k...) -> begin
-		BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
+		# BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
 		return true
 	end,
 	# verbosity = 3, plot = true,
