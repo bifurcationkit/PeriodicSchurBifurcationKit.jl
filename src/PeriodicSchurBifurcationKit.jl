@@ -1,16 +1,17 @@
 module PeriodicSchurBifurcationKit
-    using Parameters, LinearAlgebra
-    using BifurcationKit
-    using PeriodicSchurDecompositions
+	using Parameters, LinearAlgebra
+	using BifurcationKit
+	using PeriodicSchurDecompositions
+	using DocStringExtensions
 
-    const BK = BifurcationKit
-    const PSD = PeriodicSchurDecompositions
+	const BK = BifurcationKit
+	const PSD = PeriodicSchurDecompositions
 
-    # using Infiltrator
+	# using Infiltrator
 
-    include("utils.jl")
-    include("floquet.jl")
-    include("eigsolver.jl")
+	include("utils.jl")
+	include("floquet.jl")
+	include("eigsolver.jl")
 
-    export FloquetPQZ, EigPSD, EigPSD_MF, EigPS, size, eltype
+	export FloquetPQZ, EigPSD, EigPSD_MF, EigPS, size, eltype
 end

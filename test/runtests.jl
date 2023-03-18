@@ -2,7 +2,7 @@ using PeriodicSchurBifurcationKit
 using Test
 
 @testset "PeriodicSchurBifurcationKit.jl" begin
-    @testset "ODES with dense solvers" begin
+	@testset "ODES with dense solvers" begin
 		include("stuartlandau.jl")
 	end
 

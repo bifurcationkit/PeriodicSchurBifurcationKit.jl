@@ -1,8 +1,8 @@
 # struct to wrap a function into a LinearMap
 # Tv is the type of the vector space
 struct LinearMap{Tv, Tf}
-    a::Tf
-    N::Int
+	a::Tf
+	N::Int
 end
 
 LinearMap(A, x::AbstractVector) = LinearMap{typeof(x), typeof(A)}(A, length(x))

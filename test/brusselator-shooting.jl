@@ -1,5 +1,6 @@
-using Revise, Test
-	using BifurcationKit, LinearAlgebra, Plots, SparseArrays, Setfield, Parameters
+# using Revise, Plots
+using Test
+	using BifurcationKit, LinearAlgebra, SparseArrays, Setfield, Parameters
 	const BK = BifurcationKit
 
 using PeriodicSchurBifurcationKit
@@ -110,11 +111,16 @@ eig = EigKrylovKit(tol= 1e-12, x₀ = rand(2n), verbose = 0, dim = 40)
 # newton parameters
 optn_po = NewtonPar(verbose = true, tol = 1e-9,  maxIter = 25, linsolver = ls, eigsolver = eig)
 # continuation parameters
-opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.01, pMax = 1.5, maxSteps = 1, newtonOptions = (@set optn_po.tol = 1e-7), nev = 15, tolStability = 1e-3, detectBifurcation = 1, saveSolEveryStep = 2)
+opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.01, pMax = 1.5, maxSteps = 2, newtonOptions = (@set optn_po.tol = 1e-7), nev = 15, tolStability = 1e-3, detectBifurcation = 2, saveSolEveryStep = 2)
 
 Mt = 3
 
-probsh = ShootingProblem(Mt, probode, Rodas4P(); abstol = 1e-10, reltol = 1e-8, parallel = false, jacobian = :FiniteDifferences, updateSectionEveryStep = 1)
+probsh = ShootingProblem(Mt, probode,
+		# Rodas4P();
+		QNDF();
+		abstol = 1e-10, reltol = 1e-8, parallel = false,
+		jacobian = :FiniteDifferences,
+		updateSectionEveryStep = 1)
 
 br_po0 = continuation(
 	br, 1,
@@ -128,6 +134,7 @@ br_po0 = continuation(
 		BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
 		return true
 	end,
+	# verbosity = 3, plot = true,
 	normC = norminf)
 
 # test passing the eig solver as an argument
@@ -137,11 +144,12 @@ br_po1 = continuation(
 	opts_po_cont, probsh;
 	ampfactor = 1., δp = 0.0075,
 	linearAlgo = MatrixFreeBLS(@set ls.N = 2+2n*Mt),
-	eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40)),
+	eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true)),
 	finaliseSolution = (z, tau, step, contResult; k...) -> begin
 		BK.haseigenvalues(contResult) && Base.display(contResult.eig[end].eigenvals)
 		return true
 	end,
+	# verbosity = 3, plot = true,
 	normC = norminf)
 
 @test norm(br_po0.eig[end].eigenvals[1:5] - br_po1.eig[end].eigenvals[1:5], Inf) < 1e-2
@@ -150,7 +158,7 @@ br_po1 = continuation(
 br_po2 = continuation(
 	br, 1,
 	# arguments for continuation
-	(@set opts_po_cont.newtonOptions.eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40))),
+	(@set opts_po_cont.newtonOptions.eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true))),
 	# opts_po_cont,
 	probsh;
 	ampfactor = 1., δp = 0.0075,
@@ -173,7 +181,10 @@ optn_po = NewtonPar(verbose = true, tol = 1e-7,  maxIter = 25, linsolver = ls, e
 opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.005, pMax = 1.5, maxSteps = 2, newtonOptions = optn_po, nev = 10, tolStability = 1e-5, detectBifurcation = 2, plotEveryStep = 2)
 
 Mt = 2
-probpsh = PoincareShootingProblem(Mt, probode, Rodas4P(); abstol = 1e-10, reltol = 1e-8, parallel = false, jacobian = :FiniteDifferences)
+probpsh = PoincareShootingProblem(Mt, probode,
+		# Rodas4P();
+		QNDF();
+		abstol = 1e-10, reltol = 1e-8, parallel = false, jacobian = :FiniteDifferences)
 
 br_po0 = continuation(
 	br, 1,
