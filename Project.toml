@@ -10,11 +10,13 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PeriodicSchurDecompositions = "e5aedecb-f6c0-4c91-b6ff-fbae4296f459"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-BifurcationKit = "0.2.5"
 PeriodicSchurDecompositions = "0.1.3"
 LinearMaps = "3.10.0"
+BifurcationKit = "^0.3, ^0.4"
+SparseArrays = "1.11.0"
 julia = "1.8"
 
 [extras]

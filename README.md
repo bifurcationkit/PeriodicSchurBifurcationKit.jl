@@ -10,7 +10,7 @@ The methods are based on a **Periodic Schur Decomposition**. This is state of th
 
 This Periodic Schur Decomposition is provided by the Julia package [PeriodicSchurDecompositions.jl](https://github.com/RalphAS/PeriodicSchurDecompositions.jl).
 
-## Support and citation
+## 📚 Support and citation
 If you use this package for your work, we ask that you cite the following paper. Open source development as part of academic research strongly depends on this. Please also consider starring this repository if you like our work, this will help us to secure funding in the future. It is referenced on HAL-Inria as follows:
 
 ```
@@ -32,7 +32,7 @@ If you use this package for your work, we ask that you cite the following paper.
  
 > See also [PeriodicSchurDecompositions.jl](https://github.com/RalphAS/PeriodicSchurDecompositions.jl) for how to cite it.
 
-## Installation
+## 📦 Installation
 
 To install it, please run
 

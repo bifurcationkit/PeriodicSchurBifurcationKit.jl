@@ -45,10 +45,10 @@ function MonodromyPQZ(JacSH::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp}) wh
 	p = JacSH.par
 
 	# period of the cycle
-	T = getPeriod(sh, x)
+	T = getperiod(sh, x)
 
 	# extract parameters
-	M = BK.getMeshSize(sh)
+	M = BK.get_mesh_size(sh)
 	N = div(length(x) - 1, M)
 
 	# extract the time slices
@@ -68,7 +68,7 @@ end
 function MonodromyPQZ(JacSH::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp}) where {Tpb <: BK.ShootingProblem, Tjacpb <: AbstractMatrix, Torbitguess, Tp}
 	J = JacSH.jacpb
 	sh = JacSH.pb
-	M = BK.getMeshSize(sh)
+	M = BK.get_mesh_size(sh)
 	N = div(length(JacSH.x) - 1, M)
 	As = [copy(J[1:N, 1:N])]
 	if M == 1
@@ -90,7 +90,7 @@ function MonodromyPQZ(JacSH::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp}) wh
 	x_bar = JacSH.x
 	p = JacSH.par
 
-	M = BK.getMeshSize(psh)
+	M = BK.get_mesh_size(psh)
 	Nm1 = div(length(x_bar), M)
 
 	# reshape the period orbit guess into a Matrix
@@ -121,7 +121,7 @@ function MonodromyPQZ(JacSH::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp}) wh
 	sh = JacSH.pb
 	T = eltype(J)
 
-	M = BK.getMeshSize(sh)
+	M = BK.get_mesh_size(sh)
 	Nj = length(JacSH.x)
 	N = div(Nj, M)
 
@@ -154,19 +154,19 @@ function MonodromyPQZ(JacFW::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp})  w
 	M, N = size(poPb)
 
 	# period of the cycle
-	T = BK.extractPeriodFDTrap(poPb, u0)
+	T = BK.getperiod(poPb, u0)
 
 	# time step
-	h =  T * BK.getTimeStep(poPb, 1)
+	h =  T * BK.get_time_step(poPb, 1)
 
-	u0c = BK.getTimeSlices(u0, N, M)
+	u0c = BK.get_time_slices(u0, N, M)
 
 	@views As = [(I + h/2 * BK.jacobian(poPb.prob_vf, u0c[:, 1], par))]
 	@views Bs = [(I - h/2 * BK.jacobian(poPb.prob_vf, u0c[:, 1], par))]
 
 	for ii in 2:M-1
 		# also I - h/2 .* J seems to hurt (a little) the performances
-		h =  T * BK.getTimeStep(poPb, ii)
+		h =  T * BK.get_time_step(poPb, ii)
 		@views push!(As, (I + h/2 * BK.jacobian(poPb.prob_vf, u0c[:, ii], par)))
 		@views push!(Bs, (I - h/2 * BK.jacobian(poPb.prob_vf, u0c[:, ii], par)))
 	end
@@ -174,10 +174,12 @@ function MonodromyPQZ(JacFW::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp})  w
 end
 ####################################################################################################
 # orthogonal collocation
-function MonodromyPQZ(JacColl::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp})  where {Tpb <: BK.PeriodicOrbitOCollProblem, Tjacpb, Torbitguess, Tp}
 
+using SparseArrays
+
+function MonodromyPQZ(JacColl::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp})  where {Tpb <: BK.PeriodicOrbitOCollProblem, Tjacpb, Torbitguess, Tp}
 	prob = JacColl.pb
-	Ty = eltype(prob)
+	𝒯 = eltype(prob)
 
 	J = JacColl.jacpb
 	n, m, Ntst = size(prob)
@@ -187,27 +189,33 @@ function MonodromyPQZ(JacColl::BK.FloquetWrapper{Tpb, Tjacpb, Torbitguess, Tp}) 
 	# this removes the internal unknowns of each mesh interval
 	# this matrix is diagonal by blocks and each block is the L Matrix
 	# which makes the corresponding J block upper triangular
-	P = Matrix{Ty}(LinearAlgebra.I(size(J, 1)))
+
+	P = Matrix{𝒯}(LinearAlgebra.I(size(J, 1)))
 	rg = 1:nbcoll # range
 	for k = 1:Ntst
 		F = lu(J[rg, rg .+ n])
-		P[rg, rg] .= (F.P \ F.L)
+		# if true
+		# 	_Per = sparse(I(nbcoll))[F.p, :]
+		# 	P[rg, rg] .= (_Per \ Array(F.L))
+		# else
+			P[rg, rg] .= (F.P \ F.L)
+		# end
 		rg = rg .+ m * n
 	end
 
 	Jcond = P \ J
 
 	r1 = 1:n
-	r2 = n*(m-1)+1:(m*n)
+	r2 = n*(m-1)+1:(m * n)
 
-	As = Matrix{Ty}[]
-	Bs = Matrix{Ty}[]
+	As = Matrix{𝒯}[]
+	Bs = Matrix{𝒯}[]
 
 	for _ in 1:Ntst
 		push!(As, Jcond[r2, r1])
-		push!(Bs, Jcond[r2, r1 .+ n*m])
-		r1  = r1 .+ m*n
-		r2  = r2 .+ m*n
+		push!(Bs, -Jcond[r2, r1 .+ n * m])
+		r1  = r1 .+ m * n
+		r2  = r2 .+ m * n
 	end
 
 	return (;As, Bs)

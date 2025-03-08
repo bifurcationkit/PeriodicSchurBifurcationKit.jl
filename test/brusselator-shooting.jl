@@ -1,41 +1,40 @@
-# using Revise, Plots
-using Test
-	using BifurcationKit, LinearAlgebra, SparseArrays, Setfield, Parameters
-	const BK = BifurcationKit
+using Revise
+using Test, Plots
+using BifurcationKit, LinearAlgebra, SparseArrays
+const BK = BifurcationKit
 
 using PeriodicSchurBifurcationKit
 
 f1(u, v) = u^2 * v
-norminf(x) = norm(x, Inf)
 
 function Fbru!(f, x, p, t = 0)
-	@unpack α, β, D1, D2, l = p
-	n = div(length(x), 2)
-	h2 = 1.0 / n^2
-	c1 = D1 / l^2 / h2
-	c2 = D2 / l^2 / h2
+    (;α, β, D1, D2, l) = p
+    n = div(length(x), 2)
+    h2 = 1.0 / n^2
+    c1 = D1 / l^2 / h2
+    c2 = D2 / l^2 / h2
 
-	u = @view x[1:n]
-	v = @view x[n+1:2n]
+    u = @view x[1:n]
+    v = @view x[n+1:2n]
 
-	# Dirichlet boundary conditions
-	f[1]   = c1 * (α	  - 2u[1] + u[2] ) + α - (β + 1) * u[1] + f1(u[1], v[1])
-	f[end] = c2 * (v[n-1] - 2v[n] + β / α)			 + β * u[n] - f1(u[n], v[n])
+    # Dirichlet boundary conditions
+    f[1]   = c1 * (α	  - 2u[1] + u[2] ) + α - (β + 1) * u[1] + f1(u[1], v[1])
+    f[end] = c2 * (v[n-1] - 2v[n] + β / α)			 + β * u[n] - f1(u[n], v[n])
 
-	f[n]   = c1 * (u[n-1] - 2u[n] +  α   ) + α - (β + 1) * u[n] + f1(u[n], v[n])
-	f[n+1] = c2 * (β / α  - 2v[1] + v[2])			 + β * u[1] - f1(u[1], v[1])
+    f[n]   = c1 * (u[n-1] - 2u[n] +  α   ) + α - (β + 1) * u[n] + f1(u[n], v[n])
+    f[n+1] = c2 * (β / α  - 2v[1] + v[2])			 + β * u[1] - f1(u[1], v[1])
 
-	for i=2:n-1
-		  f[i] = c1 * (u[i-1] - 2u[i] + u[i+1]) + α - (β + 1) * u[i] + f1(u[i], v[i])
-		f[n+i] = c2 * (v[i-1] - 2v[i] + v[i+1])			  + β * u[i] - f1(u[i], v[i])
-	end
-	return f
+    for i=2:n-1
+          f[i] = c1 * (u[i-1] - 2u[i] + u[i+1]) + α - (β + 1) * u[i] + f1(u[i], v[i])
+        f[n+i] = c2 * (v[i-1] - 2v[i] + v[i+1])			  + β * u[i] - f1(u[i], v[i])
+    end
+    return f
 end
 
 Fbru(x, p, t = 0) = Fbru!(similar(x), x, p, t)
 
 function Jbru_sp(x, p)
-	@unpack α, β, D1, D2, l = p
+	(;α, β, D1, D2, l) = p
 	# compute the Jacobian using a sparse representation
 	n = div(length(x), 2)
 	h2 = 1.0 / n^2
@@ -72,20 +71,20 @@ n = 100
 ####################################################################################################
 # different parameters to define the Brusselator model and guess for the stationary solution
 par_bru = (α = 2., β = 5.45, D1 = 0.008, D2 = 0.004, l = 0.3)
-	sol0 = vcat(par_bru.α * ones(n), par_bru.β/par_bru.α * ones(n))
-probBif = BK.BifurcationProblem(Fbru, sol0, par_bru, (@lens _.l); J = Jbru_sp, plotSolution = (x, p; kwargs...) -> (plotsol(x; label="", kwargs... )), recordFromSolution = (x, p) -> x[div(n,2)])
+sol0 = vcat(par_bru.α * ones(n), par_bru.β/par_bru.α * ones(n))
+probBif = BK.BifurcationProblem(Fbru!, sol0, par_bru, (@optic _.l); J = Jbru_sp, plot_solution = (x, p; kwargs...) -> (plotsol(x; label="", kwargs... )), record_from_solution = (x, p;k...) -> x[div(n,2)])
 ####################################################################################################
 eigls = EigArpack(1.1, :LM)
-opts_br_eq = ContinuationPar(dsmin = 0.001, dsmax = 0.02, ds = 0.005, pMax = 1.7, detectBifurcation = 3, nev = 21, plotEveryStep = 50, newtonOptions = NewtonPar(eigsolver = eigls, tol = 1e-9), nInversion = 4)
+opts_br_eq = ContinuationPar(dsmin = 0.001, dsmax = 0.02, ds = 0.005, p_max = 1.7, detect_bifurcation = 3, nev = 21, plot_every_step = 50, newton_options = NewtonPar(eigsolver = eigls, tol = 1e-9), n_inversion = 4)
 
 br = @time continuation(
-	probBif, PALC(),
-	opts_br_eq,
-	normC = norminf)
-
+    probBif, PALC(),
+    opts_br_eq,
+    normC = norminf)
+####################################################################################################
 #################################################################################################### Continuation of Periodic Orbit
 # Standard Shooting
-using DifferentialEquations, DiffEqOperators, ForwardDiff
+using OrdinaryDiffEq#, DiffEqOperators, ForwardDiff
 
 FOde(f, x, p, t) = Fbru!(f, x, p)
 Jbru(x, dx, p) = ForwardDiff.derivative(t -> Fbru(x .+ t .* dx, p), 0.)
@@ -95,7 +94,7 @@ u0 = sol0 .+ 0.01 .* rand(2n)
 par_hopf = (@set par_bru.l = br.specialpoint[1].param + 0.01)
 
 jac_prototype = Jbru_sp(ones(2n), @set par_bru.β = 0)
-	jac_prototype.nzval .= ones(length(jac_prototype.nzval))
+jac_prototype.nzval .= ones(length(jac_prototype.nzval))
 
 using SparseDiffTools, SparseArrays
 _colors = matrix_colors(jac_prototype)
@@ -111,7 +110,7 @@ eig = EigKrylovKit(tol= 1e-12, x₀ = rand(2n), verbose = 0, dim = 40)
 # newton parameters
 optn_po = NewtonPar(verbose = true, tol = 1e-9,  maxIter = 25, linsolver = ls, eigsolver = eig)
 # continuation parameters
-opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.01, pMax = 1.5, maxSteps = 2, newtonOptions = (@set optn_po.tol = 1e-7), nev = 15, tolStability = 1e-3, detectBifurcation = 2, saveSolEveryStep = 2)
+opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.01, pMax = 1.5, maxSteps = 2, newton_options = (@set optn_po.tol = 1e-7), nev = 15, tolStability = 1e-3, detect_bifurcation = 2, saveSolEveryStep = 2)
 
 Mt = 3
 
@@ -150,11 +149,11 @@ display(br_po1.eig[end].eigenvals[1:5])
 
 @test norm(br_po0.eig[end].eigenvals[1:5] - br_po1.eig[end].eigenvals[1:5], Inf) < 1e-2
 
-# test passing the eig solver in newtonOptions
+# test passing the eig solver in newton_options
 br_po2 = continuation(
 	br, 1,
 	# arguments for continuation
-	(@set opts_po_cont.newtonOptions.eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true))),
+	(@set opts_po_cont.newton_options.eigsolver = FloquetPQZ(EigPSD_MF(tol = 1e-12, maxdim = 40, computeEigenvector = true))),
 	# opts_po_cont,
 	probsh;
 	ampfactor = 1., δp = 0.0075,
@@ -174,7 +173,7 @@ ls = GMRESIterativeSolvers(reltol = 1e-7, maxiter = 100, verbose = false)
 eig = EigKrylovKit(tol= 1e-12, x₀ = rand(2n-1), verbose = 0, dim = 40)
 optn_po = NewtonPar(verbose = true, tol = 1e-7,  maxIter = 25, linsolver = ls, eigsolver = eig)
 # continuation parameters
-opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.005, pMax = 1.5, maxSteps = 2, newtonOptions = optn_po, nev = 10, tolStability = 1e-5, detectBifurcation = 2, plotEveryStep = 2)
+opts_po_cont = ContinuationPar(dsmax = 0.03, ds= 0.005, pMax = 1.5, maxSteps = 2, newton_options = optn_po, nev = 10, tolStability = 1e-5, detect_bifurcation = 2, plot_every_step = 2)
 
 Mt = 2
 probpsh = PoincareShootingProblem(Mt, probode,

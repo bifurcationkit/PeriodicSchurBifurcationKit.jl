@@ -15,7 +15,7 @@ Eigensolver for cyclic matrices based on PeriodicSchurDecompositions.jl.
 end
 BK.geteigenvector(::EigPSD, ev, Is) = nothing
 
-function (eig::EigPSD)(J::NamedTuple{(:As, :Bs), T}, nev) where T
+function (eig::EigPSD)(J::NamedTuple{(:As, :Bs), 𝒯}, nev) where 𝒯
 	n = size(J.As[1], 1)
 	nev = min(nev, n)
 
@@ -40,7 +40,7 @@ function (eig::EigPSD)(J, nev)
 end
 
 """
-Eigensolver for cyclic matrices based on PeriodicSchurDecompositions.jl. This is based to use with a Matrix-Free formulation.
+Eigensolver for cyclic matrices based on PeriodicSchurDecompositions.jl. This is best used with a Matrix-Free formulation.
 
 !!! warning "State space"
 	This solver requires the state space to be an `AbstractVector`.
@@ -53,7 +53,7 @@ Eigensolver for cyclic matrices based on PeriodicSchurDecompositions.jl. This is
 end
 BK.geteigenvector(::EigPSD_MF, ev, Is) = nothing
 
-function (eig::EigPSD_MF)(J::NamedTuple{(:As, :Bs), T}, nev) where T
+function (eig::EigPSD_MF)(J::NamedTuple{(:As, :Bs), 𝒯}, nev) where 𝒯
 	@assert 1==0 "Not yet implemented in PeriodicSchurDecompositions.jl"
 	n = size(J.As[1], 1)
 	nev = min(nev, n)
